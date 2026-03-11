@@ -3,6 +3,7 @@ import { CalendarIcon } from '@heroicons/react/24/outline'
 import { lusitana } from '@/app/ui/fonts'
 import { Revenue } from '@/app/lib/definitions'
 import { fetchRevenue } from '@/app/lib/data'
+import { auth } from '@/auth'
 
 // This component is representational only.
 // For data visualization UI, check out:
@@ -11,7 +12,10 @@ import { fetchRevenue } from '@/app/lib/data'
 // https://airbnb.io/visx/
 
 export default async function RevenueChart() {
-  const revenue = await fetchRevenue()
+  const session = await auth()
+
+  if (!session?.user?.id) throw new Error('Not authenticated')
+  const revenue = await fetchRevenue(session.user.id)
   const chartHeight = 350
   // NOTE: Uncomment this code in Chapter 7
 

@@ -3,6 +3,7 @@ import { UpdateInvoice, DeleteInvoice } from '@/app/ui/invoices/buttons'
 import InvoiceStatus from '@/app/ui/invoices/status'
 import { formatDateToLocal, formatCurrency } from '@/app/lib/utils'
 import { fetchFilteredInvoices } from '@/app/lib/data'
+import { auth } from '@/auth'
 
 export default async function InvoicesTable({
   query,
@@ -11,7 +12,13 @@ export default async function InvoicesTable({
   query: string
   currentPage: number
 }) {
-  const invoices = await fetchFilteredInvoices(query, currentPage)
+  const session = await auth()
+  if (!session?.user?.id) throw new Error('Not authenticated')
+  const invoices = await fetchFilteredInvoices(
+    session.user.id,
+    query,
+    currentPage,
+  )
 
   return (
     <div className="mt-6 flow-root">

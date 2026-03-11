@@ -3,6 +3,7 @@ import Breadcrumbs from '@/app/ui/invoices/breadcrumbs'
 import { fetchCustomers, fetchInvoiceById } from '@/app/lib/data'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
+import { auth } from '@/auth'
 
 export const metadata: Metadata = {
   title: 'Edit Invoice',
@@ -10,9 +11,11 @@ export const metadata: Metadata = {
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params
+  const session = await auth()
+  if (!session?.user?.id) throw new Error('Not authenticated')
   const [invoice, customers] = await Promise.all([
     fetchInvoiceById(id),
-    fetchCustomers(),
+    fetchCustomers(session.user.id),
   ])
   if (!invoice) {
     notFound()

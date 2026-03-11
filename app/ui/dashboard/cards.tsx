@@ -6,6 +6,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { lusitana } from '@/app/ui/fonts'
 import { fetchCardData } from '@/app/lib/data'
+import { auth } from '@/auth'
 
 const iconMap = {
   collected: BanknotesIcon,
@@ -15,12 +16,15 @@ const iconMap = {
 }
 
 export default async function CardWrapper() {
+  const session = await auth()
+
+  if (!session?.user?.id) throw new Error('Not authenticated')
   const {
     totalPaidInvoices,
     totalPendingInvoices,
     numberOfInvoices,
     numberOfCustomers,
-  } = await fetchCardData()
+  } = await fetchCardData(session.user.id)
   return (
     <>
       {/* NOTE: Uncomment this code in Chapter 9 */}

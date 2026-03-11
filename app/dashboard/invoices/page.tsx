@@ -7,6 +7,7 @@ import { lusitana } from '@/app/ui/fonts'
 import { InvoicesTableSkeleton } from '@/app/ui/skeletons'
 import { Suspense } from 'react'
 import { fetchInvoicesPages } from '@/app/lib/data'
+import { auth } from '@/auth'
 
 export const metadata: Metadata = {
   title: 'Invoices',
@@ -21,7 +22,9 @@ export default async function Page(props: {
   const searchParams = await props.searchParams
   const query = searchParams?.query || ''
   const currentPage = Number(searchParams?.page) || 1
-  const totalPages = await fetchInvoicesPages(query)
+  const session = await auth()
+  if (!session?.user?.id) throw new Error('Not authenticated')
+  const totalPages = await fetchInvoicesPages(session.user.id, query)
   return (
     <div className="w-full">
       <div className="flex w-full items-center justify-between">

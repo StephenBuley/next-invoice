@@ -68,15 +68,16 @@ async function seedCustomers() {
       id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
       email VARCHAR(255) NOT NULL,
-      image_url VARCHAR(255) NOT NULL
+      image_url VARCHAR(255) NOT NULL,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE
     );
   `
 
   const insertedCustomers = await Promise.all(
     customers.map(
       (customer) => sql`
-        INSERT INTO customers (id, name, email, image_url)
-        VALUES (${customer.id}, ${customer.name}, ${customer.email}, ${customer.image_url})
+        INSERT INTO customers (id, name, email, image_url, user_id)
+        VALUES (${customer.id}, ${customer.name}, ${customer.email}, ${customer.image_url}, ${customer.user_id})
         ON CONFLICT (id) DO NOTHING;
       `,
     ),
@@ -88,17 +89,18 @@ async function seedCustomers() {
 async function seedRevenue() {
   await sql`
     CREATE TABLE IF NOT EXISTS revenue (
-      month VARCHAR(4) NOT NULL UNIQUE,
-      revenue INT NOT NULL
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      month VARCHAR(4) NOT NULL,
+      revenue INT NOT NULL,
+      UNIQUE(month, user_id)
     );
   `
-
   const insertedRevenue = await Promise.all(
     revenue.map(
       (rev) => sql`
-        INSERT INTO revenue (month, revenue)
-        VALUES (${rev.month}, ${rev.revenue})
-        ON CONFLICT (month) DO NOTHING;
+      INSERT INTO revenue (user_id, month, revenue)
+        VALUES (${rev.user_id}, ${rev.month}, ${rev.revenue})
+        ON CONFLICT (month, user_id) DO NOTHING;
       `,
     ),
   )

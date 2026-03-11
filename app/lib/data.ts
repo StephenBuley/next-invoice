@@ -15,7 +15,7 @@ const sql = postgres(
   // { ssl: 'require' }
 )
 
-export async function fetchRevenue() {
+export async function fetchRevenue(userId: string) {
   try {
     // Artificially delay a response for demo purposes.
     // Don't do this in production :)
@@ -23,7 +23,9 @@ export async function fetchRevenue() {
     // console.log('Fetching revenue data...')
     // await new Promise((resolve) => setTimeout(resolve, 3000))
 
-    const data = await sql<Revenue[]>`SELECT * FROM revenue`
+    const data = await sql<
+      Revenue[]
+    >`SELECT * FROM revenue where user_id = ${userId}`
 
     // console.log('Data fetch completed after 3 seconds.')
 
@@ -34,12 +36,13 @@ export async function fetchRevenue() {
   }
 }
 
-export async function fetchLatestInvoices() {
+export async function fetchLatestInvoices(userId: string) {
   try {
     const data = await sql<LatestInvoiceRaw[]>`
       SELECT invoices.amount, customers.name, customers.image_url, customers.email, invoices.id
       FROM invoices
       JOIN customers ON invoices.customer_id = customers.id
+      WHERE user_id = ${userId}
       ORDER BY invoices.date DESC
       LIMIT 5`
 
@@ -54,17 +57,19 @@ export async function fetchLatestInvoices() {
   }
 }
 
-export async function fetchCardData() {
+export async function fetchCardData(userId: string) {
   try {
     // You can probably combine these into a single SQL query
     // However, we are intentionally splitting them to demonstrate
     // how to initialize multiple queries in parallel with JS.
-    const invoiceCountPromise = sql`SELECT COUNT(*) FROM invoices`
-    const customerCountPromise = sql`SELECT COUNT(*) FROM customers`
+    const invoiceCountPromise = sql`SELECT COUNT(*) FROM invoices join customers on invoices.customer_id = customers.id where user_id = ${userId}`
+    const customerCountPromise = sql`SELECT COUNT(*) FROM customers where user_id = ${userId}`
     const invoiceStatusPromise = sql`SELECT
          SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) AS "paid",
          SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS "pending"
-         FROM invoices`
+         FROM invoices
+         join customers on invoices.customer_id = customers.id where user_id = ${userId}
+         `
 
     const data = await Promise.all([
       invoiceCountPromise,
@@ -91,6 +96,7 @@ export async function fetchCardData() {
 
 const ITEMS_PER_PAGE = 6
 export async function fetchFilteredInvoices(
+  userId: string,
   query: string,
   currentPage: number,
 ) {
@@ -109,11 +115,12 @@ export async function fetchFilteredInvoices(
       FROM invoices
       JOIN customers ON invoices.customer_id = customers.id
       WHERE
+        user_id = ${userId} AND (
         customers.name ILIKE ${`%${query}%`} OR
         customers.email ILIKE ${`%${query}%`} OR
         invoices.amount::text ILIKE ${`%${query}%`} OR
         invoices.date::text ILIKE ${`%${query}%`} OR
-        invoices.status ILIKE ${`%${query}%`}
+        invoices.status ILIKE ${`%${query}%`} )
       ORDER BY invoices.date DESC
       LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset}
     `
@@ -125,17 +132,18 @@ export async function fetchFilteredInvoices(
   }
 }
 
-export async function fetchInvoicesPages(query: string) {
+export async function fetchInvoicesPages(userId: string, query: string) {
   try {
     const data = await sql`SELECT COUNT(*)
     FROM invoices
     JOIN customers ON invoices.customer_id = customers.id
     WHERE
+      user_id = ${userId} AND (
       customers.name ILIKE ${`%${query}%`} OR
       customers.email ILIKE ${`%${query}%`} OR
       invoices.amount::text ILIKE ${`%${query}%`} OR
       invoices.date::text ILIKE ${`%${query}%`} OR
-      invoices.status ILIKE ${`%${query}%`}
+      invoices.status ILIKE ${`%${query}%`} )
   `
 
     const totalPages = Math.ceil(Number(data[0].count) / ITEMS_PER_PAGE)
@@ -171,13 +179,13 @@ export async function fetchInvoiceById(id: string) {
   }
 }
 
-export async function fetchCustomers() {
+export async function fetchCustomers(userId: string) {
   try {
     const customers = await sql<CustomerField[]>`
       SELECT
         id,
         name
-      FROM customers
+      FROM customers where user_id = ${userId}
       ORDER BY name ASC
     `
 
