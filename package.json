@@ -1,5 +1,10 @@
 {
   "private": true,
+  "author": {
+    "name": "Stephen Buley",
+    "email": "stpehen.a.buley@gmail.com",
+    "url": "https://stephenbuley.com"
+  },
   "scripts": {
     "build": "next build",
     "dev": "next dev --turbopack",
@@ -30,11 +35,5 @@
     "@types/react-dom": "19.0.3",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.1.6"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "bcrypt",
-      "sharp"
-    ]
   }
 }
